@@ -1,0 +1,63 @@
+services:
+
+  database:
+    image: bitnami/mysql:latest
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=database
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    expose:
+      - 3306
+    volumes:
+      - ./mysql:/var/lib/mysql
+    networks:
+      - backend
+
+  memcached:
+    image: bitnami/memcached:latest
+    container_name: memcached
+    expose:
+      - 11211
+    networks:
+      - backend
+
+
+  wordpress:
+    image: bitnami/wordpress:latest
+    environment:
+      - WORDPRESS_DATABASE_HOST=mysql
+      - WORDPRESS_DATABASE_NAME=database
+      - WORDPRESS_DATABASE_USER=user
+      - WORDPRESS_DATABASE_PASSWORD=password
+    expose:
+      - 8080
+    depends_on:
+      - mysql
+      - memcached
+    networks:
+      - backend
+      - frontend
+    deploy:
+      replicas: 2
+
+  nginx:
+    image: bitnami/nginx:latest
+    container_name: nginx
+    ports:
+      - 80:80
+    networks:
+      - frontend
+    depends_on:
+      - wordpress
+    volumes:
+      - ./wordpress_proxy.conf:/opt/bitnami/nginx/conf/server_blocks/wordpress_proxy.conf:ro
+    
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+      
+    
